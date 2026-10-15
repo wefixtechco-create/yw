@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YW Lottery — Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🔐 Admin Login</h2>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="admin@yw.co.za">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••">
+    </div>
+    <button class="btn btn-gold" style="width:100%;margin-top:12px;" onclick="doLogin()">Login</button>
+    <p id="loginError" style="color:var(--accent);margin-top:10px;font-size:0.85rem;"></p>
+  </div>
+</div>
+
+<!-- Admin Content -->
+<div id="adminContent" style="display:none;">
+
+  <div class="header">
+    <h1>⚙️ YW ADMIN</h1>
+    <p class="subtitle">Bloemfontein | <span id="adminUser"></span> | <button class="btn btn-red" style="padding:6px 14px;font-size:0.8rem;" onclick="doLogout()">Logout</button></p>
+  </div>
+
+  <div class="container">
+
+    <div class="admin-grid">
+
+      <!-- Left Column -->
+      <div>
+        <!-- Draw Settings -->
+        <div class="card">
+          <h2>📅 Draw Settings</h2>
+          <div class="form-group">
+            <label>Draw Date</label>
+            <input type="date" id="drawDateInput">
+          </div>
+          <div class="form-group">
+            <label>Draw Time</label>
+            <input type="time" id="drawTimeInput" value="20:30">
+          </div>
+          <div class="form-group">
+            <label>Pot (R)</label>
+            <input type="number" id="potInput" value="500">
+          </div>
+          <div class="form-group">
+            <label>Prize (R) — 60% of pot</label>
+            <input type="number" id="prizeInput" value="300">
+          </div>
+          <button class="btn btn-gold" onclick="saveDrawSettings()">Save Draw</button>
+        </div>
+
+        <!-- Announcement -->
+        <div class="card">
+          <h2>📢 Announcement</h2>
+          <div class="form-group">
+            <textarea id="announceText" rows="3" placeholder="e.g. All tickets sold! Winner announced at 20:30."></textarea>
+          </div>
+          <button class="btn btn-gold" onclick="postAnnouncement()">Post Announcement</button>
+          <button class="btn btn-red" style="margin-left:8px;" onclick="clearAnnouncement()">Clear</button>
+        </div>
+
+        <!-- Sell Ticket -->
+        <div class="card">
+          <h2>💰 Sell Ticket (CASH ONLY)</h2>
+          <div class="form-group">
+            <label>Draw Date</label>
+            <input type="date" id="sellDate">
+          </div>
+          <div class="form-group">
+            <label>Ticket Code</label>
+            <select id="sellCodeSelect" onchange="showSellPreview()"></select>
+          </div>
+          <div id="sellPreview" style="font-family:monospace;font-size:1.1rem;color:var(--gold);margin:8px 0;display:none;"></div>
+          <div class="form-group">
+            <label>Buyer First Name</label>
+            <input type="text" id="buyerName" placeholder="e.g. Thabo">
+          </div>
+          <div class="form-group">
+            <label>Buyer Phone</label>
+            <input type="tel" id="buyerPhone" placeholder="083 123 4567">
+          </div>
+          <div class="badge-cash" id="cashBadge" style="display:none;">✅ R20 CASH RECEIVED + TICKET HANDED</div>
+          <br>
+          <button class="btn btn-green" onclick="confirmSale()" style="width:100%;">Confirm Sale — R20 CASH</button>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div>
+        <!-- Spin Wheel -->
+        <div class="card">
+          <h2>🎡 Spin Wheel — Pick Winner</h2>
+          <p style="color:#aaa;font-size:0.85rem;margin-bottom:12px;">Selects randomly from SOLD tickets only.</p>
+          <div class="wheel-container">
+            <div class="wheel-pointer"></div>
+            <div class="wheel" id="spinWheel"></div>
+          </div>
+          <div style="text-align:center;">
+            <button class="btn btn-gold" id="spinBtn" onclick="spinWheel()" style="font-size:1.1rem;padding:14px 32px;">🎰 SPIN</button>
+          </div>
+          <div id="spinResult" style="text-align:center;margin-top:16px;font-size:1.2rem;font-weight:700;"></div>
+        </div>
+
+        <!-- Recent Sales -->
+        <div class="card">
+          <h2>📊 Recent Sales</h2>
+          <div id="salesList" style="max-height:300px;overflow-y:auto;font-size:0.85rem;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { db, auth, doc, setDoc, onSnapshot, collection, query, where, getDocs,
+  signInWithEmailAndPassword, signOut, onAuthStateChanged, generateAllCodes, getDrawId } from './app.js';
+
+// ─── Auth ──────────────────────────────────────────────────────────
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('adminContent').style.display = 'block';
+    document.getElementById('adminUser').textContent = user.email;
+    loadSales();
+  } else {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('adminContent').style.display = 'none';
+  }
+});
+
+function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPass').value;
+  signInWithEmailAndPassword(auth, email, pass)
+    .catch(e => { document.getElementById('loginError').textContent = e.message; });
+}
+
+function doLogout() { signOut(auth); }
+
+// ─── Draw Settings ─────────────────────────────────────────────────
+function saveDrawSettings() {
+  const date = document.getElementById('drawDateInput').value;
+  const time = document.getElementById('drawTimeInput').value;
+  const pot = parseInt(document.getElementById('potInput').value) || 500;
+  const prize = parseInt(document.getElementById('prizeInput').value) || Math.round(pot * 0.6);
+  setDoc(doc(db, 'draws', 'current'), { date, time, pot, prize }, { merge: true });
+  alert('Draw saved!');
+}
+
+// Load current draw settings
+onSnapshot(doc(db, 'draws', 'current'), (snap) => {
+  if (!snap.exists()) return;
+  const d = snap.data();
+  if (d.date) document.getElementById('drawDateInput').value = d.date;
+  if (d.time) document.getElementById('drawTimeInput').value = d.time;
+  if (d.pot) document.getElementById('potInput').value = d.pot;
+  if (d.prize) document.getElementById('prizeInput').value = d.prize;
+});
+
+// ─── Announcements ─────────────────────────────────────────────────
+function postAnnouncement() {
+  const text = document.getElementById('announceText').value.trim();
+  if (!text) return;
+  setDoc(doc(db, 'announcements', 'current'), { text, timestamp: Date.now() });
+  document.getElementById('announceText').value = '';
+  alert('Announcement posted!');
+}
+
+function clearAnnouncement() {
+  setDoc(doc(db, 'announcements', 'current'), { text: '' });
+}
+
+// ─── Sell Ticket ───────────────────────────────────────────────────
+const sellDateInput = document.getElementById('sellDate');
+sellDateInput.addEventListener('change', populateSellCodes);
+
+// Default to today
+sellDateInput.value = new Date().toISOString().split('T')[0];
+populateSellCodes();
+
+function populateSellCodes() {
+  const dateStr = sellDateInput.value;
+  if (!dateStr) return;
+  const codes = generateAllCodes(dateStr);
+  const select = document.getElementById('sellCodeSelect');
+  select.innerHTML = '<option value="">— Select Ticket —</option>';
+  codes.forEach((code, i) => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = `#${String(i+1).padStart(2,'0')} — ${code}`;
+    select.appendChild(opt);
+  });
+  document.getElementById('sellPreview').style.display = 'none';
+  document.getElementById('cashBadge').style.display = 'none';
+}
+
+function showSellPreview() {
+  const code = document.getElementById('sellCodeSelect').value;
+  const preview = document.getElementById('sellPreview');
+  if (code) {
+    preview.textContent = code;
+    preview.style.display = 'block';
+    document.getElementById('cashBadge').style.display = 'inline-block';
+  } else {
+    preview.style.display = 'none';
+    document.getElementById('cashBadge').style.display = 'none';
+  }
+}
+
+async function confirmSale() {
+  const dateStr = sellDateInput.value;
+  const code = document.getElementById('sellCodeSelect').value;
+  const name = document.getElementById('buyerName').value.trim();
+  const phone = document.getElementById('buyerPhone').value.trim();
+
+  if (!dateStr || !code || !name) { alert('Fill in date, ticket, and buyer name'); return; }
+
+  const num = code.split('-')[2];
+  const drawId = getDrawId(dateStr);
+
+  await setDoc(doc(db, 'tickets', code), {
+    code,
+    date: dateStr,
+    number: num,
+    buyerName: name,
+    buyerPhone: phone,
+    isSold: true,
+    paymentMethod: 'physical cash',
+    paymentStatus: 'paid cash',
+    drawId,
+    soldAt: Date.now()
+  });
+
+  alert(`✅ SOLD: ${code}\nR20 CASH RECEIVED + TICKET HANDED\nBuyer: ${name}`);
+  document.getElementById('buyerName').value = '';
+  document.getElementById('buyerPhone').value = '';
+  document.getElementById('cashBadge').style.display = 'none';
+  loadSales();
+}
+
+// ─── Sales List ────────────────────────────────────────────────────
+function loadSales() {
+  onSnapshot(collection(db, 'tickets'), (snap) => {
+    const list = document.getElementById('salesList');
+    const sold = snap.docs.filter(d => d.data().isSold)
+      .sort((a, b) => (b.data().soldAt||0) - (a.data().soldAt||0));
+    if (sold.length === 0) { list.innerHTML = '<p style="color:#888;">No sales yet.</p>'; return; }
+    list.innerHTML = sold.slice(0, 30).map(d => {
+      const t = d.data();
+      return `<div style="padding:8px 0;border-bottom:1px solid #333;">
+        <strong style="color:var(--green);">${t.buyerName}</strong>
+        <span style="font-family:monospace;font-size:0.75rem;color:#aaa;"> ${t.code}</span><br>
+        <small style="color:#888;">${t.date} | ${t.buyerPhone||'no phone'}</small>
+      </div>`;
+    }).join('');
+  });
+}
+
+// ─── Spin Wheel ────────────────────────────────────────────────────
+let soldTickets = [];
+let spinning = false;
+
+onSnapshot(collection(db, 'tickets'), (snap) => {
+  soldTickets = snap.docs.filter(d => d.data().isSold).map(d => d.data());
+  buildWheel();
+});
+
+function buildWheel() {
+  const wheel = document.getElementById('spinWheel');
+  wheel.innerHTML = '';
+  const n = soldTickets.length;
+  if (n === 0) {
+    wheel.style.background = '#333';
+    wheel.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:0.9rem;">No sold tickets</div>';
+    return;
+  }
+  const colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#2c3e50','#c0392b','#27ae60'];
+  const angle = 360 / n;
+  for (let i = 0; i < n; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'wheel-segment';
+    seg.style.transform = `rotate(${i * angle}deg)`;
+    seg.style.background = colors[i % colors.length];
+    seg.textContent = soldTickets[i].buyerName?.substring(0,6) || `#${i+1}`;
+    wheel.appendChild(seg);
+  }
+}
+
+async function spinWheel() {
+  if (spinning || soldTickets.length === 0) {
+    alert(soldTickets.length === 0 ? 'No sold tickets to spin!' : 'Already spinning...');
+    return;
+  }
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinResult').textContent = '';
+
+  const wheel = document.getElementById('spinWheel');
+  const n = soldTickets.length;
+  const winnerIdx = Math.floor(Math.random() * n);
+  const angle = 360 / n;
+  // Land pointer on winnerIdx: rotate so winnerIdx segment is at top
+  const targetRotation = 360 * 5 + (360 - (winnerIdx * angle + angle / 2));
+  wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+  wheel.style.transform = `rotate(${targetRotation}deg)`;
+
+  setTimeout(async () => {
+    const winner = soldTickets[winnerIdx];
+    document.getElementById('spinResult').innerHTML = `
+      🎉 <span style="color:var(--gold);">${winner.buyerName}</span> WINS!<br>
+      <span style="font-family:monospace;font-size:0.9rem;">${winner.code}</span>
+    `;
+    // Save winner to draws/current
+    const dateStr = winner.date;
+    await setDoc(doc(db, 'draws', 'current'), {
+      winnerCode: winner.code,
+      winnerName: winner.buyerName,
+      winnerDate: dateStr
+    }, { merge: true });
+
+    spinning = false;
+    document.getElementById('spinBtn').disabled = false;
+    // Reset wheel
+    wheel.style.transition = 'none';
+    wheel.style.transform = 'rotate(0deg)';
+  }, 4200);
+}
+</script>
+</body>
+</html>

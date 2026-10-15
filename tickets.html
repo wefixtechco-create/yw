@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YW Lottery — Ticket Generator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">
+  <h1>🎟️ TICKET GENERATOR</h1>
+  <p class="subtitle">YW Lottery — Bloemfontein | R20 CASH ONLY</p>
+</div>
+
+<div class="container">
+
+  <div class="card no-print">
+    <h2>Generate Tickets</h2>
+    <div class="form-group">
+      <label>Draw Date</label>
+      <input type="date" id="drawDate">
+    </div>
+    <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
+      <button class="btn btn-gold" onclick="generateTickets()">Generate 25 Tickets</button>
+      <button class="btn btn-green" onclick="window.print()">🖨️ Print (8 per A4)</button>
+      <button class="btn btn-red" onclick="downloadCSV()">⬇️ Download CSV</button>
+    </div>
+  </div>
+
+  <!-- Preview Grid -->
+  <div class="card no-print" id="previewCard" style="display:none;">
+    <h2>Preview — <span id="previewDate"></span></h2>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px;" id="previewGrid"></div>
+  </div>
+
+  <!-- Print Area -->
+  <div class="ticket-print" id="printArea" style="display:none;"></div>
+
+</div>
+
+<script type="module">
+import { generateAllCodes, generateTicketCode } from './app.js';
+
+// Default to today
+const today = new Date();
+document.getElementById('drawDate').value = today.toISOString().split('T')[0];
+
+function generateTickets() {
+  const dateStr = document.getElementById('drawDate').value;
+  if (!dateStr) { alert('Select a date'); return; }
+
+  const [y, m, d] = dateStr.split('-');
+  const ddmm = d + m;
+  const codes = generateAllCodes(dateStr);
+
+  // Preview
+  document.getElementById('previewCard').style.display = 'block';
+  document.getElementById('previewDate').textContent = dateStr;
+  const grid = document.getElementById('previewGrid');
+  grid.innerHTML = '';
+  codes.forEach((code, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:#1a1a2e;border:1px solid var(--gold);border-radius:6px;padding:10px;text-align:center;font-family:monospace;font-size:0.75rem;';
+    div.textContent = code;
+    grid.appendChild(div);
+  });
+
+  // Build print area (8 per A4 = 2 cols × 4 rows)
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = '';
+  printArea.style.display = 'grid';
+
+  codes.forEach((code, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const ticket = document.createElement('div');
+    ticket.className = 'lottery-ticket';
+    ticket.innerHTML = `
+      <div class="ticket-header">
+        <span class="logo">YW LOTTERY</span>
+        <span class="time">20:30 | CASH ONLY</span>
+      </div>
+      <div class="ticket-code">${code}</div>
+      <div class="ticket-info">
+        Bloemfontein | R20 | Ticket ${num}/25<br>
+        Draw: ${dateStr} | 18+ | ID Required
+      </div>
+      <div class="cut-line"></div>
+      <div class="stub">
+        <strong>STUB</strong> — Keep this portion<br>
+        Code: <strong>${code}</strong><br>
+        <div class="sig-line">PAID CASH ✓ &nbsp;|&nbsp; Signature: _____________</div>
+      </div>
+      <div class="wa-line">📱 WhatsApp: 083 348 7875</div>
+    `;
+    printArea.appendChild(ticket);
+  });
+}
+
+function downloadCSV() {
+  const dateStr = document.getElementById('drawDate').value;
+  if (!dateStr) { alert('Select a date first'); return; }
+  const codes = generateAllCodes(dateStr);
+  let csv = 'Code,Number,Date,Price\n';
+  codes.forEach((code, i) => {
+    csv += `${code},${String(i+1).padStart(2,'0')},${dateStr},R20\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `YW_tickets_${dateStr}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

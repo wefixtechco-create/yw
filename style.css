@@ -1,0 +1,376 @@
+/* style.css — YW Lottery Bloemfontein */
+:root {
+  --gold: #d4a017;
+  --dark: #1a1a2e;
+  --darker: #0f0f1a;
+  --accent: #e94560;
+  --green: #2ecc71;
+  --grey: #555;
+  --card: #16213e;
+  --text: #eee;
+  --wa: #25d366;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+a { color: var(--gold); text-decoration: none; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+/* ─── Header ─────────────────────────────────────────────────────── */
+.header {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, var(--darker), var(--card));
+  border-bottom: 3px solid var(--gold);
+}
+.header h1 {
+  font-size: 2.4rem;
+  background: linear-gradient(90deg, var(--gold), #fff, var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 2px;
+}
+.header .subtitle { color: #aaa; margin-top: 8px; font-size: 0.95rem; }
+
+/* ─── Live Dot ───────────────────────────────────────────────────── */
+.live-dot {
+  display: inline-block; width: 10px; height: 10px;
+  background: #ff3333; border-radius: 50%;
+  animation: pulse 1.5s infinite;
+  margin-right: 6px;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* ─── Cards ──────────────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 16px 0;
+  border: 1px solid rgba(212,160,23,0.2);
+}
+.card h2 { color: var(--gold); margin-bottom: 16px; font-size: 1.3rem; }
+
+/* ─── Pot Cards ──────────────────────────────────────────────────── */
+.pot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.pot-card {
+  text-align: center;
+  padding: 20px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  border: 2px solid var(--gold);
+}
+.pot-card .label { font-size: 0.85rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+.pot-card .value { font-size: 2rem; font-weight: 800; color: var(--gold); margin-top: 6px; }
+
+/* ─── Ticket Grid (Public) ───────────────────────────────────────── */
+.ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+}
+.ticket-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+.ticket-cell.available { background: #333; color: #888; }
+.ticket-cell.sold { background: rgba(46,204,113,0.15); color: var(--green); border-color: var(--green); }
+.ticket-cell.highlight { border-color: var(--gold); box-shadow: 0 0 20px var(--gold); transform: scale(1.1); z-index: 2; }
+.ticket-cell .num { font-size: 1.1rem; }
+.ticket-cell .name { font-size: 0.65rem; margin-top: 4px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ─── Winner Box ─────────────────────────────────────────────────── */
+.winner-box {
+  text-align: center;
+  padding: 30px;
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  background: radial-gradient(ellipse at center, rgba(212,160,23,0.1), transparent);
+  position: relative;
+  overflow: hidden;
+}
+.winner-box h3 { color: var(--gold); font-size: 1.5rem; margin-bottom: 12px; }
+.winner-box .winner-code { font-size: 2rem; font-family: monospace; color: #fff; letter-spacing: 2px; }
+
+/* ─── Announcement Banner ────────────────────────────────────────── */
+.announce-banner {
+  background: linear-gradient(90deg, var(--accent), #c0392b);
+  padding: 12px 20px;
+  text-align: center;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  animation: slideDown 0.5s ease;
+}
+@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ─── WhatsApp Float ─────────────────────────────────────────────── */
+.wa-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 60px;
+  height: 60px;
+  background: var(--wa);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(37,211,102,0.4);
+  z-index: 1000;
+  transition: transform 0.3s;
+}
+.wa-float:hover { transform: scale(1.1); }
+.wa-float svg { width: 32px; height: 32px; fill: #fff; }
+
+/* ─── Buttons ────────────────────────────────────────────────────── */
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-gold { background: var(--gold); color: var(--dark); }
+.btn-gold:hover { background: #f0b830; transform: translateY(-2px); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-red { background: var(--accent); color: #fff; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Forms ──────────────────────────────────────────────────────── */
+.form-group { margin: 12px 0; }
+.form-group label { display: block; margin-bottom: 6px; color: #aaa; font-size: 0.9rem; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: var(--darker);
+  color: var(--text);
+  font-size: 1rem;
+}
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--gold); }
+
+/* ─── Admin Login ────────────────────────────────────────────────── */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--darker);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.login-box {
+  background: var(--card);
+  padding: 40px;
+  border-radius: 16px;
+  border: 2px solid var(--gold);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+.login-box h2 { color: var(--gold); margin-bottom: 24px; }
+
+/* ─── Admin Controls ─────────────────────────────────────────────── */
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 768px) { .admin-grid { grid-template-columns: 1fr; } }
+
+.badge-cash {
+  display: inline-block;
+  background: var(--green);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+/* ─── Spin Wheel ─────────────────────────────────────────────────── */
+.wheel-container {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  margin: 20px auto;
+}
+.wheel {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 6px solid var(--gold);
+  position: relative;
+  transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+  overflow: hidden;
+}
+.wheel-pointer {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 20px solid var(--gold);
+  z-index: 10;
+}
+.wheel-segment {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  top: 0; left: 50%;
+  transform-origin: bottom left;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* ─── Ticket Print (tickets.html) ───────────────────────────────── */
+.ticket-print {
+  width: 210mm;
+  min-height: 297mm;
+  background: #fff;
+  color: #000;
+  padding: 10mm;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5mm;
+}
+.lottery-ticket {
+  border: 2px solid #000;
+  border-radius: 8px;
+  padding: 10px;
+  position: relative;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.lottery-ticket .ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px dashed #999;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+.lottery-ticket .ticket-header .logo { font-weight: 900; font-size: 1.1rem; color: #c0392b; }
+.lottery-ticket .ticket-header .time { font-size: 0.75rem; font-weight: 700; background: #c0392b; color: #fff; padding: 3px 8px; border-radius: 4px; }
+.lottery-ticket .ticket-code { font-family: monospace; font-size: 1.2rem; font-weight: 900; text-align: center; margin: 10px 0; letter-spacing: 2px; }
+.lottery-ticket .ticket-info { font-size: 0.7rem; color: #555; text-align: center; }
+.lottery-ticket .cut-line {
+  border-top: 2px dashed #999;
+  margin: 10px 0;
+  position: relative;
+}
+.lottery-ticket .cut-line::before {
+  content: '✂ CUT HERE';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 0 6px;
+  font-size: 0.6rem;
+  color: #999;
+}
+.lottery-ticket .stub {
+  background: #f0f0f0;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+.lottery-ticket .stub .sig-line {
+  border-top: 1px solid #333;
+  margin-top: 12px;
+  padding-top: 4px;
+  text-align: center;
+  font-weight: 700;
+}
+.lottery-ticket .wa-line { text-align: center; font-size: 0.65rem; color: #25d366; margin-top: 6px; font-weight: 700; }
+
+/* ─── Print Styles ───────────────────────────────────────────────── */
+@media print {
+  body * { visibility: hidden; }
+  .ticket-print, .ticket-print * { visibility: visible; }
+  .ticket-print {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 5mm;
+  }
+  .no-print { display: none !important; }
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .ticket-grid { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .ticket-cell { font-size: 0.6rem; }
+  .header h1 { font-size: 1.6rem; }
+  .pot-grid { grid-template-columns: 1fr 1fr; }
+  .admin-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── Date/Time Box ──────────────────────────────────────────────── */
+.datetime-box {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.datetime-item {
+  background: var(--card);
+  padding: 12px 20px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid rgba(212,160,23,0.3);
+}
+.datetime-item .label { font-size: 0.75rem; color: #aaa; text-transform: uppercase; }
+.datetime-item .value { font-size: 1.2rem; font-weight: 700; color: var(--gold); margin-top: 4px; }
+
+/* ─── Verify Section ─────────────────────────────────────────────── */
+.verify-result {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+.verify-result.valid { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid var(--green); }
+.verify-result.invalid { background: rgba(233,69,96,0.15); color: var(--accent); border: 1px solid var(--accent); }
+.verify-result.sold { background: rgba(212,160,23,0.15); color: var(--gold); border: 1px solid var(--gold); }

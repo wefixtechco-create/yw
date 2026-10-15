@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YW Lottery — Bloemfontein | R300 Daily</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">
+  <h1>🎰 YW LOTTERY</h1>
+  <p class="subtitle"><span class="live-dot"></span> LIVE — Bloemfontein | Daily 20:30 | CASH ONLY</p>
+</div>
+
+<div class="container">
+
+  <!-- Announcement Banner -->
+  <div id="announceBanner" class="announce-banner" style="display:none;"></div>
+
+  <!-- Date/Time Box -->
+  <div class="datetime-box">
+    <div class="datetime-item">
+      <div class="label">Next Draw</div>
+      <div class="value" id="nextDrawDate">—</div>
+    </div>
+    <div class="datetime-item">
+      <div class="label">Time</div>
+      <div class="value" id="nextDrawTime">20:30</div>
+    </div>
+    <div class="datetime-item">
+      <div class="label">Pot</div>
+      <div class="value" id="potValue">R500</div>
+    </div>
+    <div class="datetime-item">
+      <div class="label">Prize</div>
+      <div class="value" id="prizeValue">R300</div>
+    </div>
+  </div>
+
+  <!-- Pot Cards -->
+  <div class="pot-grid">
+    <div class="pot-card">
+      <div class="label">Current Pot</div>
+      <div class="value" id="potCard">R500</div>
+    </div>
+    <div class="pot-card">
+      <div class="label">Prize (60%)</div>
+      <div class="value" id="prizeCard">R300</div>
+    </div>
+    <div class="pot-card">
+      <div class="label">Ticket Price</div>
+      <div class="value">R20</div>
+    </div>
+    <div class="pot-card">
+      <div class="label">Tickets</div>
+      <div class="value">25</div>
+    </div>
+  </div>
+
+  <!-- Winner Box -->
+  <div class="card">
+    <div class="winner-box" id="winnerBox">
+      <h3>🏆 Latest Winner</h3>
+      <div class="winner-code" id="winnerCode">—</div>
+      <p style="margin-top:10px;color:#aaa;font-size:0.85rem;" id="winnerDate"></p>
+    </div>
+  </div>
+
+  <!-- Ticket Grid -->
+  <div class="card">
+    <h2>🎟️ Tickets — <span id="gridDate">—</span></h2>
+    <div class="ticket-grid" id="ticketGrid"></div>
+    <p style="text-align:center;margin-top:12px;font-size:0.8rem;color:#888;">
+      <span style="color:var(--green);">■</span> Sold &nbsp; <span style="color:#555;">■</span> Available
+    </p>
+  </div>
+
+  <!-- Verify Code -->
+  <div class="card">
+    <h2>🔍 Verify Your Ticket</h2>
+    <div class="form-group">
+      <input type="text" id="verifyInput" placeholder="Enter code e.g. YW-1510-01-AB1234" style="font-family:monospace;text-transform:uppercase;">
+    </div>
+    <button class="btn btn-gold" onclick="verifyCode()">Verify</button>
+    <div id="verifyResult"></div>
+  </div>
+
+  <!-- Rules -->
+  <div class="card">
+    <h2>📋 Rules</h2>
+    <ul style="line-height:2;font-size:0.9rem;color:#ccc;">
+      <li>Present <strong>Ticket + CODE + ID</strong> to claim</li>
+      <li>Claim within <strong>3 days</strong> of draw</li>
+      <li><strong>18+</strong> only</li>
+      <li><strong>CASH ONLY</strong> — no eWallet / bank</li>
+      <li>Draw runs daily at <strong>20:30</strong></li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- WhatsApp Float -->
+<a href="https://wa.me/27833487875" target="_blank" class="wa-float" aria-label="WhatsApp">
+  <svg viewBox="0 0 24 24"><path d="M1.946 9.332c-.548 2.137.419 5.157 2.802 7.54 2.383 2.383 5.403 3.35 7.54 2.802l2.076 2.076c.244.244.59.37.936.37h.008c.48 0 .92-.291 1.102-.742l.458-1.077c.148-.353.068-.76-.206-1.034l-1.74-1.74c.774-.594 1.444-1.32 1.966-2.137.857-1.352 1.22-2.864 1.02-4.24-.214-1.467-1.02-2.883-2.23-4.093-1.21-1.21-2.626-2.016-4.093-2.23-1.375-.2-2.887.163-4.24 1.02-.816.522-1.542 1.192-2.136 1.966L3.9 2.63c-.274-.274-.68-.354-1.034-.206l-1.077.458c-.451.182-.742.622-.742 1.102v.008c0 .346.126.692.37.936l2.529 2.406z"/></svg>
+</a>
+
+<script type="module" src="app.js"></script>
+<script type="module">
+import { db, doc, onSnapshot, collection, query, where, getDocs, generateAllCodes } from './app.js';
+
+// ─── Parse ?code= param ────────────────────────────────────────────
+const urlCode = new URLSearchParams(window.location.search).get('code');
+
+// ─── Listen to draws/current ───────────────────────────────────────
+onSnapshot(doc(db, 'draws', 'current'), (snap) => {
+  if (!snap.exists()) return;
+  const d = snap.data();
+  document.getElementById('nextDrawDate').textContent = d.date || '—';
+  document.getElementById('nextDrawTime').textContent = d.time || '20:30';
+  document.getElementById('potValue').textContent = 'R' + (d.pot || 500);
+  document.getElementById('prizeValue').textContent = 'R' + (d.prize || 300);
+  document.getElementById('potCard').textContent = 'R' + (d.pot || 500);
+  document.getElementById('prizeCard').textContent = 'R' + (d.prize || 300);
+  document.getElementById('gridDate').textContent = d.date || '—';
+
+  // Winner
+  if (d.winnerCode) {
+    document.getElementById('winnerCode').textContent = d.winnerCode;
+    document.getElementById('winnerDate').textContent = d.winnerDate || '';
+    // Fire confetti
+    const box = document.getElementById('winnerBox');
+    fireConfetti(box, 60);
+  }
+});
+
+// ─── Listen to announcement ────────────────────────────────────────
+onSnapshot(doc(db, 'announcements', 'current'), (snap) => {
+  const banner = document.getElementById('announceBanner');
+  if (snap.exists() && snap.data().text) {
+    banner.textContent = snap.data().text;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+});
+
+// ─── Listen to all tickets for current date ────────────────────────
+let currentDrawDate = null;
+onSnapshot(doc(db, 'draws', 'current'), (snap) => {
+  if (!snap.exists()) return;
+  const dateStr = snap.data().date; // e.g. "2025-10-15"
+  if (!dateStr || dateStr === currentDrawDate) return;
+  currentDrawDate = dateStr;
+  loadTickets(dateStr);
+});
+
+async function loadTickets(dateStr) {
+  const codes = generateAllCodes(dateStr);
+  const grid = document.getElementById('ticketGrid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < 25; i++) {
+    const code = codes[i];
+    const cell = document.createElement('div');
+    cell.className = 'ticket-cell available';
+    cell.id = 'cell-' + i;
+    cell.innerHTML = `<span class="num">${String(i+1).padStart(2,'0')}</span><span class="name"></span>`;
+    grid.appendChild(cell);
+  }
+
+  // Subscribe to ticket collection
+  const q = query(collection(db, 'tickets'), where('drawId', '==', getDrawId(dateStr)));
+  onSnapshot(q, (snap) => {
+    // Reset all to available
+    for (let i = 0; i < 25; i++) {
+      const cell = document.getElementById('cell-' + i);
+      cell.className = 'ticket-cell available';
+      cell.querySelector('.name').textContent = '';
+    }
+    snap.forEach((doc) => {
+      const data = doc.data();
+      const idx = parseInt(data.number) - 1;
+      if (idx >= 0 && idx < 25) {
+        const cell = document.getElementById('cell-' + idx);
+        if (data.isSold) {
+          cell.className = 'ticket-cell sold';
+          cell.querySelector('.name').textContent = data.buyerName || '';
+        }
+      }
+    });
+    // Highlight ?code=
+    if (urlCode) {
+      const codes2 = generateAllCodes(dateStr);
+      const hi = codes2.indexOf(urlCode.toUpperCase());
+      if (hi >= 0) {
+        document.getElementById('cell-' + hi).classList.add('highlight');
+        document.getElementById('cell-' + hi).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  });
+}
+
+// ─── Verify Code ───────────────────────────────────────────────────
+async function verifyCode() {
+  const input = document.getElementById('verifyInput').value.trim().toUpperCase();
+  const result = document.getElementById('verifyResult');
+  result.className = '';
+  result.innerHTML = '';
+  if (!input) return;
+
+  try {
+    const snap = await getDocs(query(collection(db, 'tickets'), where('__name__', '==', input)));
+    if (snap.empty) {
+      // Check if it's a valid format for today
+      const today = new Date();
+      const ddmm = String(today.getDate()).padStart(2,'0') + String(today.getMonth()+1).padStart(2,'0');
+      const codes = generateAllCodes(today.toISOString().split('T')[0]);
+      if (codes.includes(input)) {
+        result.className = 'verify-result valid';
+        result.textContent = '✅ Valid ticket — NOT yet sold. Good luck!';
+      } else {
+        result.className = 'verify-result invalid';
+        result.textContent = '❌ Invalid code. Check your ticket.';
+      }
+    } else {
+      const data = snap.docs[0].data();
+      if (data.isSold) {
+        result.className = 'verify-result sold';
+        result.textContent = `🎟️ SOLD — Buyer: ${data.buyerName || 'Unknown'}`;
+      } else {
+        result.className = 'verify-result valid';
+        result.textContent = '✅ Valid ticket — Available';
+      }
+    }
+  } catch (e) {
+    result.className = 'verify-result invalid';
+    result.textContent = '⚠️ Error checking. Try again.';
+  }
+}
+
+function fireConfetti(container, count) {
+  const colors = ['#ff0000','#ffd700','#00ff00','#00bfff','#ff69b4','#ff8c00'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:absolute;width:10px;height:10px;background:${colors[Math.floor(Math.random()*colors.length)]};top:50%;left:50%;border-radius:${Math.random()>0.5?'50%':'2px'};pointer-events:none;z-index:9999;transition:all ${1.5+Math.random()}s cubic-bezier(.25,.46,.45,.94);`;
+    container.appendChild(el);
+    requestAnimationFrame(() => {
+      el.style.transform = `translate(${(Math.random()-0.5)*400}px, ${(Math.random()-0.5)*300 - 150}px) rotate(${Math.random()*720}deg)`;
+      el.style.opacity = '0';
+    });
+    setTimeout(() => el.remove(), 3000);
+  }
+}
+</script>
+</body>
+</html>
