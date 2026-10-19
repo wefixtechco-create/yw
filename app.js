@@ -1,14 +1,27 @@
 // app.js — Shared Firebase config & utilities
 // Replace with YOUR Firebase project config
 
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAtumgV01ecQCz2scS4jvYHZOVyX9m6iAE",
+  authDomain: "yw-za-88954.firebaseapp.com",
+  projectId: "yw-za-88954",
+  storageBucket: "yw-za-88954.firebasestorage.app",
+  messagingSenderId: "653738438576",
+  appId: "1:653738438576:web:c76566f2d4b7e7d2a07075",
+  measurementId: "G-T1FR20XKQ4"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
